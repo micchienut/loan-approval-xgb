@@ -38,14 +38,16 @@ def preprocess_input(user_input, map_config, clip_config, encoder, scaler):
     # convert to df
     columns = ['person_age', 'person_gender', 'person_education', 'person_income',
                'person_emp_exp', 'person_home_ownership', 'loan_amnt', 'loan_intent',
-               'loan_int_rate', 'loan_percent_income', 'cb_person_cred_hist_length',
-               'credit_score', 'previous_loan_defaults_on_file']
+               'loan_int_rate', 'cb_person_cred_hist_length', 'credit_score', 'previous_loan_defaults_on_file']
 
     df = pd.DataFrame([user_input], columns=columns)
 
     # clip extreme values
     for col, rules in clip_config.items():
         df[col] = df[col].clip(**rules)
+    
+    # calculate loan % amnt, derived from (loan_amnt/person_income)*100
+    df['loan_percent_income'] = (df['loan_amnt']/df['person_income'])*100
 
     # mapping
     for col, mapping in map_config.items():
@@ -62,8 +64,8 @@ def preprocess_input(user_input, map_config, clip_config, encoder, scaler):
 
     # scaling
     scale_cols = ['person_age', 'person_income', 'person_emp_exp',
-                  'loan_amnt', 'loan_int_rate', 'loan_percent_income',
-                  'cb_person_cred_hist_length', 'credit_score']
+                  'loan_amnt', 'loan_int_rate', 'cb_person_cred_hist_length',
+                  'credit_score', 'loan_percent_income']
 
     df[scale_cols] = scaler.transform(df[scale_cols])
 
@@ -91,18 +93,17 @@ def main():
 
     st.title("💰 Loan Approval Status Prediction 💳")
 
-    person_age = st.number_input("Age", min_value=0, max_value=100, value=30)
+    person_age = st.number_input("Age", min_value=18, max_value=100, value=25)
     person_gender = st.selectbox("Gender", options=['male', 'female'])
     person_education = st.selectbox("Education", options=['High School', 'Bachelor', 'Associate', 'Master', 'Doctorate'])
-    person_income = st.number_input("Annual Income", min_value=0)
-    person_emp_exp = st.number_input("Years of Work Experience", min_value=0, max_value=80, value=5)
+    person_income = st.number_input("Annual Income", min_value=1000)
+    person_emp_exp = st.number_input("Years of Work Experience", min_value=0, max_value=80, value=2)
     person_home_ownership = st.selectbox("Home Ownership", ['RENT', 'MORTGAGE', 'OWN', 'OTHER'])
-    loan_amnt = st.number_input("Loan Amount", min_value=0)
+    loan_amnt = st.number_input("Loan Amount", min_value=500)
     loan_intent = st.selectbox("Loan Intent", ['VENTURE', 'PERSONAL', 'EDUCATION', 'MEDICAL', 'DEBTCONSOLIDATION', 'HOMEIMPROVEMENT'])
-    loan_int_rate = st.number_input("Loan Interest Rate", min_value=0.0)
-    loan_percent_income = st.number_input("Loan % of Income", min_value=0.0)
+    loan_int_rate = st.number_input("Loan Interest Rate", min_value=1, max_value=50)
     cb_person_cred_hist_length = st.number_input("Credit History Length (Years)", min_value=0)
-    credit_score = st.number_input("Credit Score", min_value=0)
+    credit_score = st.number_input("Credit Score", min_value=300, max_value=850)
     previous_loan_defaults_on_file = st.selectbox("Any Previous Loan Defaults?", ['Yes', 'No'])
     
     user_input = [person_age,
@@ -114,7 +115,6 @@ def main():
                   loan_amnt,
                   loan_intent,
                   loan_int_rate,
-                  loan_percent_income,
                   cb_person_cred_hist_length,
                   credit_score,
                   previous_loan_defaults_on_file]
@@ -122,8 +122,11 @@ def main():
 
     if st.button("Predict Loan Approval"):
         prediction = model.predict(input_df)
-        result = "✅ Approved" if prediction[0] == 1 else "❌ Rejected"
+        probability = model.predict_proba(input_df)[0][1]
+
+        result = "✅ Your loan is likely to be approved" if prediction[0] == 1 else "❌ Your loan is likely to be rejected"
         st.subheader(f"Prediction: {result}")
+        st.write(f"Probability of approval: {probability:.2%}")
 
 if __name__ == "__main__":
     main()

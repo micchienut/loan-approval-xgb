@@ -51,6 +51,14 @@ class DataHandler:
         self.df['previous_loan_defaults_on_file'] = self.df['previous_loan_defaults_on_file'].map(self.map_config['previous_loan_defaults_on_file'])
         self.df['person_education'] = self.df['person_education'].map(self.map_config['person_education'])
     
+    # Drop column
+    def drop(self, col):
+        self.df = self.df.drop(col, axis=1)
+
+    # Derive loan_percent_income
+    def derive_percent(self):
+        self.df['loan_percent_income'] = (self.df['loan_amnt']/self.df['person_income'])*100
+    
     def check_data(self):
         print(self.df.head())
 
@@ -138,6 +146,8 @@ class ModelHandler:
 file_path = 'Dataset_A_loan.csv'
 data_handler = DataHandler(file_path)
 data_handler.load_data() # read data
+data_handler.drop('loan_percent_income')
+data_handler.derive_percent()
 data_handler.clip_data() # clip extreme values
 data_handler.mapping() # categorical mapping to numerical
 # data_handler.check_data() # check df.head() to see progress
