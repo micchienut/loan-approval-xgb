@@ -45,9 +45,6 @@ def preprocess_input(user_input, map_config, clip_config, encoder, scaler):
     # clip extreme values
     for col, rules in clip_config.items():
         df[col] = df[col].clip(**rules)
-    
-    # calculate loan % amnt, derived from (loan_amnt/person_income)*100
-    df['loan_percent_income'] = (df['loan_amnt']/df['person_income'])*100
 
     # mapping
     for col, mapping in map_config.items():
@@ -65,7 +62,7 @@ def preprocess_input(user_input, map_config, clip_config, encoder, scaler):
     # scaling
     scale_cols = ['person_age', 'person_income', 'person_emp_exp',
                   'loan_amnt', 'loan_int_rate', 'cb_person_cred_hist_length',
-                  'credit_score', 'loan_percent_income']
+                  'credit_score']
 
     df[scale_cols] = scaler.transform(df[scale_cols])
 

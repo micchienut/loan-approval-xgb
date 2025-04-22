@@ -54,10 +54,6 @@ class DataHandler:
     # Drop column
     def drop(self, col):
         self.df = self.df.drop(col, axis=1)
-
-    # Derive loan_percent_income
-    def derive_percent(self):
-        self.df['loan_percent_income'] = (self.df['loan_amnt']/self.df['person_income'])*100
     
     def check_data(self):
         print(self.df.head())
@@ -81,8 +77,7 @@ class ModelHandler:
         
         # Split categorical & numerical data in X
         self.scale_col = ['person_age', 'person_income', 'person_emp_exp',
-                    'loan_amnt', 'loan_int_rate', 'loan_percent_income',
-                    'cb_person_cred_hist_length', 'credit_score']
+                    'loan_amnt', 'loan_int_rate', 'cb_person_cred_hist_length', 'credit_score']
         self.ohe_col = ['person_home_ownership', 'loan_intent']
     
     def check_X(self):
@@ -147,7 +142,6 @@ file_path = 'Dataset_A_loan.csv'
 data_handler = DataHandler(file_path)
 data_handler.load_data() # read data
 data_handler.drop('loan_percent_income')
-data_handler.derive_percent()
 data_handler.clip_data() # clip extreme values
 data_handler.mapping() # categorical mapping to numerical
 # data_handler.check_data() # check df.head() to see progress
